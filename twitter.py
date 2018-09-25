@@ -21,7 +21,7 @@ class TweetStore(object):
         self.tweets = []
         self.max_id = None
         self.stream = None
-        self.search_string = "#graphklmadrid"
+        self.search_string = "#graphqlmadrid"
 
     def get_tweets_for_user(self, user_id):
         """Returns the tweets for a given user"""
