@@ -3,6 +3,7 @@ import asyncio
 from peony import PeonyClient
 from peony.oauth_dance import oauth_dance
 from aiostream import operator
+from collections import defaultdict
 
 if not os.getenv("CONSUMER_KEY"):
     raise Exception("Need to setup twitter env vars (create a .env file)")
@@ -20,14 +21,39 @@ class TweetStore(object):
         self.tweets = []
         self.max_id = None
         self.stream = None
+        self.search_string = "#graphklmadrid"
+
+    def get_tweets_for_user(self, user_id):
+        """Returns the tweets for a given user"""
+        tweets = [tweet for tweet in self.tweets if tweet.user.id == user_id]
+        # print(tweets)
+        return tweets
+
+    def get_leaderboard(self):
+        """Returns the list of most popular authors"""
+        leader_tweets = defaultdict(list)
+        users = {}
+        for tweet in self.tweets:
+            leader_tweets[tweet.user.id].append(tweet)
+            if tweet.user.id not in users:
+                users[tweet.user.id] = tweet.user
+
+        def sort_key(item):
+            author, tweets = item
+            return (len(tweets), author)
+
+        return [
+            users[user_id]
+            for user_id in dict(sorted(leader_tweets.items(), key=sort_key)).keys()
+        ]
 
     def add_tweets(self, tweets):
-        # We prepend the tweets to the list
+        """prepend the tweets to the store"""
         self.tweets = tweets + self.tweets
 
     async def retrieve_tweets(self, since_id=-1):
         results = await twitter_client.api.search.tweets.get(
-            q="hello", since_id=since_id, count=200, tweet_mode="extended"
+            q=self.search_string, since_id=since_id, count=200, tweet_mode="extended"
         )
         return results.statuses, results.search_metadata["max_id_str"]
 
@@ -46,8 +72,10 @@ class TweetStore(object):
                 yield tweet
             await asyncio.sleep(1)
 
+    # def get_stream(self):
+    #     return self.tweet_iterator()
+
     async def get_stream(self):
-        # return self.tweet_iterator()
         if not self.stream:
 
             async def tweet_iterator():
@@ -62,7 +90,6 @@ class TweetStore(object):
         async with self.stream.stream() as streamer:
             async for tweet in streamer:
                 yield tweet
-        # return self.stream
 
 
 store = TweetStore()

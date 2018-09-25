@@ -4,7 +4,7 @@ from aiohttp_graphql import GraphQLView
 from graphql_ws.aiohttp import AiohttpSubscriptionServer
 from graphql.execution.executors.asyncio import AsyncioExecutor
 
-# To load the environment variables
+# Load the environment variables from the .env file
 from dotenv import load_dotenv, find_dotenv
 
 if find_dotenv():
@@ -14,6 +14,7 @@ if find_dotenv():
 from schema import schema
 from playground import playground_view
 from graphiql import graphiql_view
+from twitter import store
 
 
 app = web.Application()
