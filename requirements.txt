@@ -1,0 +1,16 @@
+graphene
+graphql-ws
+aiohttp
+aiohttp-graphql
+aiostream
+# To accelerate asyncio
+uvloop
+# Consume twitter API with asyncio
+peony-twitter[all]
+# Timezones
+pytz
+# Load .env variables
+python-dotenv
+
+# To autoreload files on dev mode
+aioreloader
