@@ -2,6 +2,9 @@ import os
 import asyncio
 from peony import PeonyClient
 from peony.oauth_dance import oauth_dance
+from peony.stream import StreamResponse
+from peony.data_processing import JSONData
+
 from aiostream import operator
 from collections import defaultdict
 
@@ -21,7 +24,7 @@ class TweetStore(object):
         self.tweets = []
         self.max_id = None
         self.stream = None
-        self.search_string = "#graphqlmadrid"
+        self.search_string = "#graphqlprimer"
 
     def get_tweets_for_user(self, user_id):
         """Returns the tweets for a given user"""
@@ -65,25 +68,29 @@ class TweetStore(object):
                 return tweets
         return self.tweets
 
-    async def tweet_iterator(self):
-        while True:
-            tweets = await self.get_tweets(only_recent=True)
-            for tweet in tweets:
-                yield tweet
-            await asyncio.sleep(1)
-
-    # def get_stream(self):
-    #     return self.tweet_iterator()
-
     async def get_stream(self):
         if not self.stream:
 
             async def tweet_iterator():
-                while True:
-                    tweets = await self.get_tweets(only_recent=True)
-                    for tweet in tweets:
-                        yield tweet
-                    await asyncio.sleep(1)
+                stream = StreamResponse(
+                    twitter_client,
+                    url="https://stream.twitter.com/1.1/statuses/filter.json",
+                    method="POST",
+                    data={"track": self.search_string},
+                )
+                async for tweet in stream:
+                    data = JSONData(tweet)
+                    if "connected" in data:
+                        # If it's the connection signal
+                        continue
+                    self.add_tweets([data])
+                    yield data
+
+                # while True:
+                #     tweets = await self.get_tweets(only_recent=True)
+                #     for tweet in tweets:
+                #         yield tweet
+                #     await asyncio.sleep(1)
 
             self.stream = operator(tweet_iterator)()
 
